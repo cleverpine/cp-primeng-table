@@ -1,0 +1,132 @@
+<p-table
+  #dataTable
+  [columns]="columns"
+  [value]="data"
+  [paginator]="!!tableSettings.showPaginator"
+  [rows]="tableSettings.rowsPerPage || DEFAULT_ROWS_PER_PAGE"
+  [showCurrentPageReport]="true"
+  [currentPageReportTemplate]="'Showing {first} to {last} of {totalRecords} entries'"
+  [rowsPerPageOptions]="tableSettings.rowsPerPageOptions || DEFAULT_ROWS_PER_PAGE_OPTIONS"
+  [totalRecords]="tableSettings.totalRecords"
+  [lazy]="true"
+  (onLazyLoad)="loadData($event)"
+  sortMode="multiple"
+  styleClass="p-datatable-sm"
+  [class]="tableSettings.cssClass"
+  [selectionMode]="tableSettings.isRowClickable ? 'single' : null"
+>
+  <ng-template pTemplate="header" let-columns>
+    <!-- Column Names -->
+    <tr>
+      <ng-container *ngFor="let col of columns">
+        <th *ngIf="col.sortable" [pSortableColumn]="col.field" [ngClass]="col.colClass ? col.colClass : 'column-width'">
+          <div class="column-header-items">
+            {{ col.headerText }}
+            <p-sortIcon id="{{ 'sort' + col.field }}" [field]="col.field"></p-sortIcon>
+
+            <!-- Filter if Date type -->
+            <p-columnFilter
+              *ngIf="col.type === 'date'"
+              id="{{ 'filter' + col.field }}"
+              type="date"
+              display="menu"
+              field="{{ col.field }}"
+              [showMatchModes]="false"
+              [showOperator]="false"
+              [showAddButton]="false"
+              [showApplyButton]="false"
+            >
+              <ng-template pTemplate="filter" let-filter="filterCallback">
+                <p-calendar (onSelect)="onDateSelect($event, filter)"></p-calendar>
+              </ng-template>
+            </p-columnFilter>
+          </div>
+        </th>
+
+        <th [ngClass]="col.colClass ? col.colClass : 'column-width'" *ngIf="!col.sortable">
+          {{ col.headerText }}
+        </th>
+      </ng-container>
+    </tr>
+
+    <tr>
+      <ng-container *ngFor="let col of columns">
+        <th [ngClass]="col.colClass ? col.colClass : 'column-width'">
+          <p-columnFilter
+            *ngIf="col.type === 'text' && !col.checkboxFilterOptions"
+            type="text"
+            id="{{ 'filter' + col.field }}"
+            field="{{ col.field }}"
+            [matchMode]="col.matchMode"
+          >
+          </p-columnFilter>
+
+          <p-columnFilter
+            *ngIf="col.checkboxFilterOptions"
+            field="{{ col.field }}"
+            id="{{ 'filter' + col.field }}"
+            class="hide-filter-button"
+          >
+            <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+              <p-multiSelect
+                id="{{ 'multiselect' + col.field }}"
+                [ngModel]="value"
+                [options]="col.checkboxFilterOptions"
+                [placeholder]="'Select'"
+                (onChange)="filter($event.value)"
+              >
+              </p-multiSelect>
+            </ng-template>
+          </p-columnFilter>
+        </th>
+      </ng-container>
+    </tr>
+  </ng-template>
+
+  <!-- Rows data -->
+  <ng-template pTemplate="body" let-rowData let-columns="columns" let-ri="rowIndex">
+    <tr (click)="onRowClick && onRowClick.emit(rowData)" id="{{ 'tr' + rowData.id }}">
+      <td *ngFor="let col of columns">
+        <div *ngIf="col.type !== 'status'" [ngClass]="{ 'fw-bold': col.bold }">
+          {{ getFormattedText(col, rowData) }}
+        </div>
+
+        <div *ngIf="col.type === 'buttons'" style="display: flex; justify-content: flex-end">
+          <ng-container *ngFor="let button of col.buttons">
+            <p-button
+              *ngIf="button.isVisible !== undefined ? button.isVisible(rowData) : true && !button.iconSvg"
+              id="{{ 'btn' + button.label }}"
+              class="btn btn-md"
+              [ngClass]="determineButtonValue(button, 'btnClass', rowData)"
+              (click)="handleButtonClick($event, button, rowData, ri)"
+              [disabled]="button.isActive !== undefined ? !button.isActive(rowData) : false"
+            >
+              {{ determineButtonValue(button, 'label', rowData) }}
+            </p-button>
+
+            <p-button
+              *ngIf="button.iconSvg"
+              [text]="true"
+              [rounded]="true"
+              class="btn btn-md"
+              [ngClass]="determineButtonValue(button, 'btnClass', rowData)"
+              (click)="handleButtonClick($event, button, rowData, ri)"
+              [disabled]="button.isActive !== undefined ? !button.isActive(rowData) : false"
+              severity="secondary"
+            >
+              <ng-template pTemplate="content">
+                <span class="material-symbols-outlined" style="font-size: 35px">{{ button.iconSvg }}</span>
+              </ng-template>
+            </p-button>
+          </ng-container>
+        </div>
+      </td>
+    </tr>
+  </ng-template>
+  <!-- Message if no table data -->
+  <ng-template pTemplate="emptymessage" let-columns>
+    <tr>
+      <td [attr.colspan]="columns.length">No results found.</td>
+    </tr>
+  </ng-template>
+</p-table>
