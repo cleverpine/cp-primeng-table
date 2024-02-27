@@ -16,4 +16,4 @@ extends:
   template: pipeline-fe-library.yaml@templates
   parameters:
     libraryName: "cp-primeng-table"
-    installCommand: "install --legacy-peer-deps"
+    installCommand: "install"
